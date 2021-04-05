@@ -1,0 +1,10 @@
+*.txt
+*.out
+*.sh
+*.csv
+*.ipynb_checkpoints*
+*__pycache__*
+.DS_Store
+thresholds/
+aggressive/
+logs/
