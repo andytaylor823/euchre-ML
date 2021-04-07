@@ -44,9 +44,6 @@ class Board:
         self.current_player = self.leader
         self.winning_card = None
 
-        self.first_round_threshold = 70
-        self.second_round_threshold = self.first_round_threshold
-        self.going_alone_threshold = 100 # get to this later
         self.going_alone = False
         self.called_first_round = None
 

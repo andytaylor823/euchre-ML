@@ -10,8 +10,8 @@ class Player:
         lead_rules,
         lead_alone_rules,
         follow_rules,
-        first_round_threshold=70,
-        second_round_threshold=70,
+        first_round_threshold=72,
+        second_round_threshold=72,
         going_alone_threshold=120 # come back to this
         ):
 

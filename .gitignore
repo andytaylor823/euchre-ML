@@ -1,7 +1,7 @@
 *.txt
 *.out
 *.sh
-*.csv
+*_hands_*.csv
 *.ipynb_checkpoints*
 *__pycache__*
 .DS_Store

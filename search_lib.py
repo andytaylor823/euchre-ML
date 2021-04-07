@@ -73,8 +73,7 @@ def search_performance_parallel(thresholds, id, n_epochs=10, n_hands=1000, opp_t
         else:
              title = 'Job #' + str(id)
     #progress = notebook.tqdm(total=n_epochs*len(thresholds), position=id, desc=title)
-    
-    
+
     folder = 'aggressive' if folder is None else folder
     folder = os.path.join(ROOT_DIR, folder)
     
@@ -109,19 +108,16 @@ def search_performance_parallel(thresholds, id, n_epochs=10, n_hands=1000, opp_t
     
 
 def parallel_search_wrapper(thresholds, MAX_CPUS=8, n_epochs=10, n_hands=100, opp_thresh=None,
-                            title=None, ROOT_DIR=os.getcwd()+'/'):
+                            title=None, ROOT_DIR=os.getcwd()+'/', folder=None):
     t1 = time.time()
-    if ROOT_DIR[-1] == '/':
-        if ROOT_DIR[:-1] not in os.listdir():
-            os.mkdir(ROOT_DIR[:-1])
-    else:
-        if ROOT_DIR not in os.listdir():
-            os.mkdir(ROOT_DIR)
+    if not os.path.exists(ROOT_DIR):
+        os.mkdir(ROOT_DIR)
+
     
     N_CPUS = min(MAX_CPUS, multiprocessing.cpu_count()-1)
     pool = multiprocessing.Pool(N_CPUS)
     for i in range(len(thresholds)):
-        folder = 'thresh' + str(thresholds[i])
+        folder = 'thresh' + str(thresholds[i]) if folder is None else folder
         pool.apply_async(search_performance_parallel, args=(thresholds[i], i, n_epochs, n_hands, opp_thresh, folder, title, ROOT_DIR))
     pool.close()
     pool.join()

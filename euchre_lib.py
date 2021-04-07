@@ -2,6 +2,7 @@ import os
 import optimal_strategy as opt
 import pandas as pd
 from tqdm import notebook
+from player import Player
 notebook.tqdm.pandas()
 
 def read_all_hands(folder='stored_runs/', use_tqdm=True):
