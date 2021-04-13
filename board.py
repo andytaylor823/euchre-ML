@@ -487,7 +487,7 @@ class Board:
         # write each player's hand
         # Total values after this: 4 x 20 = 80
         for i in range(4):
-            pos = (i-self.dealer.id+1)%4 # start to the left of the dealer
+            pos = (i+self.dealer.id+1)%4 # start to the left of the dealer
             data += [val for c in self.starting_hands[pos] for val in [c.power] + [issuit for issuit in suit_to_writeout[c.suit]]]
         # write some global stuff:
         # turn_card power & suit (1 + 3) trump suit (3), caller position (relative to dealer; 1), round called in (1), alone (1), 
@@ -503,9 +503,16 @@ class Board:
         # now just write out the order of all the cards played -- string (card + player id) is fine
         # include the first word of the result as well ("EUCHRE", "Single", "Sweep", "Loner")
         # Total values after all this: 97 + 21 = 118
-        data += [str(self.cards_played[i]) + str(i) for i in range(4)] # if dealer is 3, first trick is always 0 - 1 - 2 - 3
+
+        # if dealer is 3, first trick is always 0 - 1 - 2 - 3
+        # unless player 2 is going alone
+        if self.going_alone and (self.caller.id + 1)%4 == self.dealer.id:
+            data += [str(self.cards_played[i]) + str((i+1)%4) for i in range(4)]
+        else:
+            data += [str(self.cards_played[i]) + str(i) for i in range(4)]
         data += [str(self.cards_played[4*j+i]) + str((i+self.winners[j-1].id-self.dealer.id-1)%4) for j in range(1,5) for i in range(4)]
-        data += [self.result.split()[0]]
+        #data += [self.result.split()[0]]
+        data += ['Single' if 'single' in self.result.lower() else ('EUCHRE' if 'euchre' in self.result.lower() else ('Loner' if 'loner' in self.result.lower() else ('Sweep')))]
         data += [(i+self.dealer.id+1)%4 for i in range(4)]
 
         if self.header == []:
