@@ -3,6 +3,7 @@
 *.sh
 *_hands_*.csv
 *.ipynb_checkpoints*
+*.tfrecord
 *__pycache__*
 .DS_Store
 thresholds/
