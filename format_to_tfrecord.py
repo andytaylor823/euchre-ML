@@ -3,7 +3,7 @@ import os
 import sys
 import tensorflow as tf
 tf.compat.v1.enable_eager_execution()
-print(tf.__version__)
+#print(tf.__version__)
 import time
 import pandas as pd
 import data_formatting as dtf
@@ -125,10 +125,12 @@ def read_one(serialized_example):
     example = tf.io.parse_single_example(serialized_example, feature_description)
     data = tf.io.parse_tensor(example['data'], tf.int8)
     target = tf.io.parse_tensor(example['target'], tf.int8)
+    data = tf.reshape(data, [-1, dtf.COLS_TOTAL])
+    target = tf.reshape(target, [-1, dtf.COLS_TARGET])
     return data, target
 
 def read_dataset(path):
-    path = 'tfrecords/10000_hands_403.tfrecord'
+    #path = 'tfrecords/10000_hands_403.tfrecord'
     dataset = tf.data.TFRecordDataset(path)
     dataset = dataset.map(read_one)
     return dataset

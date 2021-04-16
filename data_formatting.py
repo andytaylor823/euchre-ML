@@ -7,6 +7,7 @@ COLS_GROUP3 = 24*13
 COLS_GROUP4 = 55
 COLS_TOTAL = COLS_GROUP1 + COLS_GROUP2 + COLS_GROUP3 + COLS_GROUP4
 same_color_suit = {'C':'S', 'D':'H', 'H':'D', 'S':'C'}
+COLS_TARGET = 24
 def format_data(data, usetqdm=True, start=0, stop=None, count=None):
     """
     Here is all the data that needs to be fed to the ML algorithm, grouped by phase of the game.
@@ -63,7 +64,7 @@ def format_data(data, usetqdm=True, start=0, stop=None, count=None):
     stop = len(data) if stop is None else stop
     count = len(data) if count is None else count
     formatted = np.zeros((20*(stop-start), COLS_TOTAL), dtype=np.int8)
-    target = np.zeros((20*(stop-start), 24), dtype=np.int8)
+    target = np.zeros((20*(stop-start), COLS_TARGET), dtype=np.int8)
     
     for i in tqdm(data.index) if usetqdm else data.index:
         i = int(i)
