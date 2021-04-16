@@ -1,5 +1,5 @@
 import numpy as np
-from tqdm import notebook
+from tqdm.auto import tqdm
 
 COLS_GROUP1 = 24
 COLS_GROUP2 = 47
@@ -65,7 +65,7 @@ def format_data(data, usetqdm=True, start=0, stop=None, count=None):
     formatted = np.zeros((20*(stop-start), COLS_TOTAL), dtype=np.int8)
     target = np.zeros((20*(stop-start), 24), dtype=np.int8)
     
-    for i in notebook.tqdm(data.index) if usetqdm else data.index:
+    for i in tqdm(data.index) if usetqdm else data.index:
         i = int(i)
         if i < start:  continue
         elif i >= stop: break

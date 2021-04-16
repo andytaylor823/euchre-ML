@@ -2,7 +2,11 @@ import numpy as np
 import os
 import sys
 import tensorflow as tf
+tf.compat.v1.enable_eager_execution()
+print(tf.__version__)
 import time
+import pandas as pd
+import data_formatting as dtf
 
 ###################################
 def get_next_file(datafolder, skipfiles_path):
@@ -10,14 +14,15 @@ def get_next_file(datafolder, skipfiles_path):
         lines = f.read()
     skipfiles = lines.split('\n')
     for f in os.listdir(datafolder):
+        f = os.path.join(datafolder, f)
         if '.csv' not in f:
             continue
         if '_hands_' not in f:
             continue
-        if f in skipfiles:
+        if f.split('/')[-1] in [skipfile.split('/')[-1] for skipfile in skipfiles]:
             continue
-        return os.path.join(datafolder, f)
-    
+        return f
+
 def reserve_file(skipfiles_path, file):
     with open(skipfiles_path, 'a') as outfile:
         outfile.write(file+'\n')
@@ -137,7 +142,7 @@ if __name__ == "__main__":
         ROOT = '/staging/fast/taylora/euchre/'
         dt_stop = 23*3600
     else:
-        ROOT = os.getcwd()
+        ROOT = ''
         dt_stop = None
     
     datafolder = os.path.join(ROOT, 'RLdataset')
