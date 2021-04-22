@@ -44,8 +44,9 @@ def format_data(data, usetqdm=True, start=0, stop=None, count=None):
     (4)  1.) Confirmed in anyone's hand (my hand + ordered up turn card?)
     (4)  2.) Played in a previous trick by someone (maybe later expand this to which prev trick?)
     (3)  3.) Played in CURRENT trick by someone
-    (1)  4.) Is trump
-    Total: 288 columns
+    (1)  4.) Confirmed buried
+    (1)  5.) Is trump
+    Total: 312 columns
     
     #######
     DATA GROUP 4: My remaining hand, again
