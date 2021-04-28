@@ -24,7 +24,9 @@ def make_model(dense_layers=None, drop_prob=0, reg=0, learning_rate=None):
     elif not hasattr(dense_layers, '__len__'):
         dense_layers = [int(i/5*dtf.COLS_TOTAL) for i in np.linspace(20, 0, dense_layers)]
     else:
-        pass
+        if max(dense_layers) < 10:
+            dense_layers = [l*dtf.COLS_TOTAL for l in dense_layers]
+            
     dense_layers = sorted([int(l) for l in dense_layers], reverse=True)
     
     x = None
@@ -78,6 +80,7 @@ def train_valid_test(tfrecords_dir=None, seed=623, train_frac=0.7, valid_frac=0.
         tfrecords_dir = '/staging/fast/taylora/euchre/tfrecords' if os.path.exists('/staging/fast/') else os.path.join(os.getcwd(), 'tfrecords')
     tfrecord_paths = [os.path.join(tfrecords_dir, f) for f in os.listdir(tfrecords_dir) if '.tfrecord' in f]
     np.random.seed(int(seed))
+    tf.set_random_seed(int(seed))
     np.random.shuffle(tfrecord_paths)
 
     #train_frac = 0.7; valid_frac=0.2; test_frac=1-train_frac-valid_frac # don't need to have this last bit, but eh

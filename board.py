@@ -1,7 +1,7 @@
 from copy import deepcopy
 from card import Card
 from player import Player
-import optimal_strategy
+import optimal_strategy as opt
 import random
 import sys
 import os
@@ -22,13 +22,13 @@ class Board:
         else:                   self.in_kernel = 'ipykernel_launcher.py' in sys.argv[0]
 
         if p0 is None:
-            p0 = self._make_optimal_player(0)
+            p0 = opt.make_optimal_player(0)
         if p1 is None:
-            p1 = self._make_optimal_player(1)
+            p1 = opt.make_optimal_player(1)
         if p2 is None:
-            p2 = self._make_optimal_player(2)
+            p2 = opt.make_optimal_player(2)
         if p3 is None:
-            p3 = self._make_optimal_player(3)
+            p3 = opt.make_optimal_player(3)
 
         self.players = [p0, p1, p2, p3]
         self.turn_card = None
@@ -238,16 +238,16 @@ class Board:
 
         
 
-
+    # deprecated -- use same function from "optimal_strategy" instead
     def _make_optimal_player(self, id):
         player = Player(
             id=id,
             hand=[],
-            call_first_round_rules=optimal_strategy.get_call_first_round_rules(),
-            call_second_round_rules=optimal_strategy.get_call_second_round_rules(),
-            lead_rules=optimal_strategy.get_leading_rules(),
-            lead_alone_rules=optimal_strategy.get_leading_alone_rules(),
-            follow_rules=optimal_strategy.get_follow_rules()
+            call_first_round_rules=opt.get_call_first_round_rules(),
+            call_second_round_rules=opt.get_call_second_round_rules(),
+            lead_rules=opt.get_leading_rules(),
+            lead_alone_rules=opt.get_leading_alone_rules(),
+            follow_rules=opt.get_follow_rules()
         )
         return player
 
