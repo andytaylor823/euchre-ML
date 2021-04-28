@@ -1,6 +1,27 @@
 from rule import Rule
+from player import Player
 # rule init: rule(condition, rule_type, name)
 # condition: condition(board, player)
+first_round_threshold = 72
+second_round_threshold = 72
+going_alone_threshold = 120 # come back to this
+def make_optimal_player(id):
+    player = Player(
+        id=id,
+        hand=[],
+        
+        call_first_round_rules=get_call_first_round_rules(),
+        call_second_round_rules=get_call_second_round_rules(),
+        
+        lead_rules=get_leading_rules(),
+        lead_alone_rules=get_leading_alone_rules(),
+        follow_rules=get_follow_rules(),
+        
+        first_round_threshold=first_round_threshold,
+        second_round_threshold=second_round_threshold,
+        going_alone_threshold=going_alone_threshold
+    )
+    return player
 
 def tnum(hand): return(6-len(hand))
 
@@ -71,18 +92,7 @@ def _nth_highest_remaining_trump(board, player, n=1):
 
 def highest_remaining_trump(board, player):
 	return _nth_highest_remaining_trump(board, player, n=1)
-# old
-"""
-	trumps_played = set([c.power for c in board.cards_played if c.trump])
-	if board.turn_card.left:
-		trumps_played.add(turn_card.power) # make sure the turn card isn't still leftover trump, verifying it's the left should help
-	all_trumps = set([12, 15, 20, 25, 30, 31, 35])
-	best_remaining = max([p for p in all_trumps if p not in trumps_played])
-	for c in player.hand:
-		if c.power == best_remaining:
-			return c
-	return None
-"""
+
 
 def offsuit_king(board, player):
 	for c in player.hand:
@@ -105,7 +115,9 @@ def mostly_trump(board, player):
 	return None
 
 def best_off_card(board, player):
-	return max([c for c in player.hand if not c.trump], key=lambda x: x.power)
+    if len([c for c in player.hand if not c.trump]) != 0:
+        return max([c for c in player.hand if not c.trump], key=lambda x: x.power)
+    return None
 
 
 ###################
