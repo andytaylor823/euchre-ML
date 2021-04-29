@@ -2,6 +2,7 @@
 *.out
 *.sh
 *_hands_*.csv
+*missed*.csv
 *.ipynb_checkpoints*
 *.tfrecord
 *__pycache__*
