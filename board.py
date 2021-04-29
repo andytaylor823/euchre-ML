@@ -76,7 +76,7 @@ class Board:
                 self._show()
             self.close_trick()
         self.close_hand()
-        self._show()
+        #self._show()
 
     def play_game(self, show=True):
         while max(self.points) < 10:
@@ -154,7 +154,10 @@ class Board:
     def play_card(self):
         if len(self.current_trick) == 0:
             if self.going_alone:
-                c = self.current_player.lead_alone(self)
+                if self.caller.id == self.current_player.id:
+                    c = self.current_player.lead_alone(self)
+                else:
+                    c = self.current_player.lead(self)
             else:
                 c = self.current_player.lead(self)
         else:
@@ -350,6 +353,7 @@ class Board:
 
             if asvar: return lines
             else:     return None
+        print('result:', self.result)
 
         p3 = self.dealer
         p0 = self.players[self._next_pos(p3.id)]
@@ -514,6 +518,7 @@ class Board:
         #data += [self.result.split()[0]]
         data += ['Single' if 'single' in self.result.lower() else ('EUCHRE' if 'euchre' in self.result.lower() else ('Loner' if 'loner' in self.result.lower() else ('Sweep')))]
         data += [(i+self.dealer.id+1)%4 for i in range(4)]
+        data += [self.caller.id] + [self.points_this_round[(self.caller.id)%2] - self.points_this_round[(self.caller.id+1)%2]]
 
         if self.header == []:
             header = []
@@ -527,6 +532,7 @@ class Board:
             header += ['played' + str(i) for i in range(1,21)]
             header += ['result']
             header += ['p'+str(i)+'trueid' for i in range(4)]
+            header += ['caller_trueid', 'caller_points']
             self.header = header
 
         self.data.append(data)
