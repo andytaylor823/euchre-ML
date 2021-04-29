@@ -61,6 +61,7 @@ def follow_BASIC(board, player):
     n, c2_above, c3_above = opt._trump_spot_winning_card(board, player, teamwinner, winning_card)
 
     can_win, highest, lowest, lowest_winning = opt._key_cards(board, player, legal)
+    lowest = min(legal, key=lambda x: x.power)
 
     if not can_win:                                                return(lowest)
     if not teamwinner:
