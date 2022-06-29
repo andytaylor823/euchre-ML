@@ -2,42 +2,53 @@ from copy import deepcopy
 from card import Card
 from player import Player
 import optimal_strategy as opt
+import store_data
+import show_board
+
 import random
 import sys
 import os
 
-full_names = {'C':'Clubs', 'D':'Diamonds', 'H':'Hearts', 'S':'Spades'}
-name_to_writeout = {'9': [0,0,0,0,0],
-                    'T': [1,0,0,0,0],
-                    'J': [0,1,0,0,0],
-                    'Q': [0,0,1,0,0],
-                    'K': [0,0,0,1,0],
-                    'A': [0,0,0,0,1]}
-suit_to_writeout = {'C':[0,0,0], 'D':[1,0,0], 'H':[0,1,0], 'S':[0,0,1]}
+# unused as of 06/29/2022
+#full_names = {'C':'Clubs', 'D':'Diamonds', 'H':'Hearts', 'S':'Spades'}
+#name_to_writeout = {'9': [0,0,0,0,0],
+#                    'T': [1,0,0,0,0],
+#                    'J': [0,1,0,0,0],
+#                    'Q': [0,0,1,0,0],
+#                    'K': [0,0,0,1,0],
+#                    'A': [0,0,0,0,1]}
 # Position options: 0, 1, 2, 3.
 # Imagine 0 as sitting at west, then going clockwise, ending with 3 at south
 class Board:
-    def __init__(self, p0=None, p1=None, p2=None, p3=None):
+    def __init__(self, p0=None, p1=None, p2=None, p3=None, seed=None):
         if len(sys.argv) < 1:   self.in_kernel = True # from command line
         else:                   self.in_kernel = 'ipykernel_launcher.py' in sys.argv[0]
 
-        if p0 is None:
-            p0 = opt.make_optimal_player(0)
-        if p1 is None:
-            p1 = opt.make_optimal_player(1)
-        if p2 is None:
-            p2 = opt.make_optimal_player(2)
-        if p3 is None:
-            p3 = opt.make_optimal_player(3)
-
+        random.seed(seed)
+        if p0 is None: p0 = opt.make_optimal_player(0)
+        if p1 is None: p1 = opt.make_optimal_player(1)
+        if p2 is None: p2 = opt.make_optimal_player(2)
+        if p3 is None: p3 = opt.make_optimal_player(3)
         self.players = [p0, p1, p2, p3]
+        self.dealer = random.choice(self.players)
+        self.leader = self.players[self._next_pos(self.dealer.id)]
+        
+        self.reset_hand()
+        
+        self.show = True
+        self.store = True
+        self.points = [0, 0] # players 0 & 2 get ix 0, players 1 & 3 get ix 1
+        self.data = []
+        self.results = []
+        self.header = []
+
+    # TODO work this into self.close_hand() to remove unnecessary duplication
+    def reset_hand(self):
         self.turn_card = None
         self.trump_suit = None
         self.kitty = []
         self.starting_hands = []
 
-        self.dealer = random.choice(self.players)
-        self.leader = self.players[self._next_pos(self.dealer.id)]
         self.caller = None
         self.winner = None
         self.winners = []
@@ -53,19 +64,14 @@ class Board:
         self.current_trick = []
         self.tnum = 1
 
-        self.points = [0, 0] # players 0 & 2 get ix 0, players 1 & 3 get ix 1
         self.points_this_round = [0,0]
         self.result = None
-        self.results = []
 
-        self.show = True
-        self.store = True
-        self.data = []
-        self.header = []
 
-    def play_hand(self, show=False):
+    def play_hand(self, show=False, seed=None):
         self.show = show
-        self.deal()
+        self.reset_hand()
+        self.deal(seed)
         self._show()
         self.call_trump()
         for tnum in range(1,6):
@@ -83,8 +89,9 @@ class Board:
             self.play_hand(show)
 
 
-    def deal(self):
+    def deal(self, seed=None):
         deck = self._create_deck()
+        random.seed(seed) # if seed = None, this is still random
         random.shuffle(deck)
         for i in range(4):
             self.players[i].hand = deck[(5*i):(5*(i+1))]
@@ -93,7 +100,9 @@ class Board:
         for p in self.players:
             p._order_hand(trump_suit=self.turn_card.suit)
             self.starting_hands.append(p.hand)
-        self.points_this_round = [0,0]
+        if seed is not None:
+            self.dealer = random.choice(self.players)
+            self.leader = self.players[self._next_pos(self.dealer.id)]
     
     def call_trump(self):
         for _ in range(4):
@@ -241,35 +250,14 @@ class Board:
 
         
 
-    # deprecated -- use same function from "optimal_strategy" instead
-    def _make_optimal_player(self, id):
-        player = Player(
-            id=id,
-            hand=[],
-            call_first_round_rules=opt.get_call_first_round_rules(),
-            call_second_round_rules=opt.get_call_second_round_rules(),
-            lead_rules=opt.get_leading_rules(),
-            lead_alone_rules=opt.get_leading_alone_rules(),
-            follow_rules=opt.get_follow_rules()
-        )
-        return player
-
-
     def _create_deck(self):
         names = ['9', 'T', 'J', 'Q', 'K', 'A']
         suits = ['C', 'D', 'H', 'S']
-        deck = []
-        for n in names:
-            for s in suits:
-                deck.append(Card(n, s))
-        return deck
+        return [Card(n,s) for n in names for s in suits]
 
-    def _next_pos(self, pos):
-        return (pos+1)%4
-    def _prev_pos(self, pos):
-        return (pos-1)%4
-    def _partner(self, pos):
-        return (pos+2)%4
+    def _next_pos(self, pos): return (pos+1)%4
+    def _prev_pos(self, pos): return (pos-1)%4
+    def _partner(self, pos):  return (pos+2)%4
 
     def _stick_the_dealer(self):
         powers = {}
@@ -285,6 +273,22 @@ class Board:
     
     def _points(self):
         ntricks = [sum([w.id%2 == i for w in self.winners]) for i in range(2)]
+        callers, winners = self.caller.id%2, self.caller.id%2
+        if ntricks[callers] == 5: points, result = (4 if self.going_alone else 2), 'Sweep'
+        elif ntricks[callers] >= 3: points, result = 1, 'Single'
+        else: points, result, winners = 2, 'EUCHRE', 1-callers
+        
+        by_against = 'by' if result != 'EUCHRE' else 'against'
+        if self.going_alone:
+            self.result = f'Loner {result[0].lower() + result[1:]} {by_against} Player {self.caller.id}'
+        else:
+            self.result = f'{result} {by_against} Players {self.caller.id} and {self._partner(self.caller.id)}'
+
+        self.points[winners] += points
+        self.points_this_round[winners] += points
+        
+        # Deprecated as of 06/29/2022
+        old="""
         if self.caller.id%2 == 0:
             if self.going_alone:
                 if ntricks[0] == 5:
@@ -339,222 +343,44 @@ class Board:
                     self.points[0] += 2
                     self.points_this_round[0] += 2
                     self.result = 'EUCHRE against Players %i and %i' %(self.caller.id, self._partner(self.caller.id))
-
-    def _show(self, asvar=False):
-        if not self.show:
-            return
-
-        if self.result is not None:
-            lines = ['Hand is finished!']
-            lines.append(self.result)
-            lines.append('Players 0/2 score: %i (%i tricks)\nPlayers 1/3 score: %i (%i tricks)' \
-                %(self.points[0], self.ntricks[0]+self.ntricks[2], self.points[1], self.ntricks[1]+self.ntricks[3]))
-            print('\n'.join(lines))
-
-            if asvar: return lines
-            else:     return None
-        print('result:', self.result)
-
-        p3 = self.dealer
-        p0 = self.players[self._next_pos(p3.id)]
-        p1 = self.players[self._next_pos(p0.id)]
-        p2 = self.players[self._next_pos(p1.id)]
-
-        all_space = ' '
-        zero_placeholder_space = ' '
-        zero_to_hand_space = ' '
-        zerohand_placeholder_space = '  '
-        zerohand_to_onethreehand_space = ' '
-        onethreehand_placeholder_space = ' '.join(['  ' for _ in range(5)])
-        onethreehand_to_twohand_space = zerohand_to_onethreehand_space # mirror
-        twohand_placeholder_space = zerohand_placeholder_space
-        hand_to_two_space = zero_to_hand_space
-        two_placeholder_space = ' '
-
-        all_zero_space = all_space
-        all_onethree_space = all_zero_space + zero_placeholder_space + zero_to_hand_space + zerohand_placeholder_space + zerohand_to_onethreehand_space
-        all_two_space = all_onethree_space + onethreehand_placeholder_space + onethreehand_to_twohand_space
-
-        zerohand_to_onethree_cardplayed_space = zerohand_to_onethreehand_space + ' '.join(['  ' for _ in range(2)]) + ' '
-        zerohand_to_zero_cardplayed_space = zerohand_to_onethreehand_space + ' '.join(['  ' for _ in range(1)]) + ' '
-        zerohand_to_two_cardplayed_space = zerohand_to_onethreehand_space + ' '.join(['  ' for _ in range(3)]) + ' '
-        zero_cardplayed_to_two_cardplayed_space = ' ' + ' '.join(['  ' for _ in range(1)]) + ' '
-        zero_cardplayed_to_twohand_space = ' ' + ' '.join(['  ' for _ in range(3)]) + onethreehand_to_twohand_space
-
-        lines = ['']
-        # first, just the number 1
-        lines.append(all_onethree_space + ''.join([' ' for _ in range(int(len(onethreehand_placeholder_space)/2))]) + str(p1.id))
-        # next, player 1's hand
-        lines.append(all_onethree_space + ' '.join([str(c) for c in p1.hand]) + ' ' +  ' '.join(['--' for _ in range(5-len(p1.hand))]))
-        # next, a blank row
-        lines.append(' ')
-        # next, player 0 and player 2 hand
-        # this gets a bit hairy with the played cards
-        for i in range(5):
-            s = all_zero_space
-            if i == 2: s += str(p0.id)
-            else:      s += zero_placeholder_space
-            s += zero_to_hand_space 
-
-            if i < len(p0.hand): s += str(p0.hand[i])
-            else:                s += '--'
-
-            if i == 1:
-                if len(p1.hand) < 6-self.tnum:
-                    s += zerohand_to_onethree_cardplayed_space + str(self.current_trick[(p1.id-self.leader.id)%4]) + zerohand_to_onethree_cardplayed_space # mirror
-                else:
-                    s += zerohand_to_onethreehand_space + onethreehand_placeholder_space + onethreehand_to_twohand_space
-
-            elif i == 2:
-                if len(p0.hand) < 6-self.tnum:
-                    s += zerohand_to_zero_cardplayed_space + str(self.current_trick[(p0.id-self.leader.id)%4])
-                    if len(p2.hand) < 6-self.tnum:
-                        s += zero_cardplayed_to_two_cardplayed_space + str(self.current_trick[(p2.id-self.leader.id)%4]) + zerohand_to_zero_cardplayed_space # mirror
-                    else:
-                        s += zero_cardplayed_to_twohand_space
-                elif len(p2.hand) < 6-self.tnum:
-                    s += zerohand_to_two_cardplayed_space + str(self.current_trick[(p2.id-self.leader.id)%4]) + zerohand_to_zero_cardplayed_space # mirror
-                else:
-                    s += zerohand_to_onethreehand_space + onethreehand_placeholder_space + onethreehand_to_twohand_space
-
-            elif i == 3:
-                if len(p3.hand) < 6-self.tnum:
-                    s += zerohand_to_onethree_cardplayed_space + str(self.current_trick[(p3.id-self.leader.id)%4]) + zerohand_to_onethree_cardplayed_space # mirror
-                else:
-                    s += zerohand_to_onethreehand_space + onethreehand_placeholder_space + onethreehand_to_twohand_space
-
-            else:
-                s += zerohand_to_onethreehand_space + onethreehand_placeholder_space + onethreehand_to_twohand_space
-
-            if i < len(p2.hand): s += str(p2.hand[i])
-            else:                s += '--'
-
-            if i == 2: s += hand_to_two_space + str(p2.id)
-            s += '\n'
-            lines.append(s)
-
-        # next, player 3's hand
-        lines.append(all_onethree_space + ' '.join([str(c) for c in p3.hand]) + ' ' +  ' '.join(['--' for _ in range(5-len(p3.hand))]))
-        # next, the number 3
-        lines.append(all_onethree_space + ''.join([' ' for _ in range(int(len(onethreehand_placeholder_space)/2))]) + str(p3.id))
-        # a line break, for space
-        lines.append('')
-
-
-
-        # add in global stuff, can come back to this
-        lines.append('Turn card: ' + str(self.turn_card) + ', Player %i is dealer' %self.dealer.id)
-        if self.trump_suit is not None:
-            lines.append('Trump suit: *' + str(full_names[self.trump_suit]).upper() + '* (called %s round by Player %i)'\
-                     %('first' if self.called_first_round else 'second', self.caller.id))
-        if self.going_alone:
-            lines.append('THIS PLAYER IS GOING ALONE')
-
-        if len(self.cards_played) > 0:
-            lines.append('')
-            lines.append('Player %i led, and Player %i is winning' %(self.leader.id, self.winner.id))
-
-        lines.append('Players 0/2 score: %i (%i tricks currently)\nPlayers 1/3 score: %i (%i tricks currently)' \
-                %(self.points[0], self.ntricks[0]+self.ntricks[2], self.points[1], self.ntricks[1]+self.ntricks[3]))
+        """
         
-        # final line break to close it out
-        lines.append('\n')
-
-
-        print('\n'.join(lines))
-        x = ''
-        while x.lower() not in ['x', 'c']:
-            x = input('Enter "c" to continue, "x" to exit: ')
-
-        if x.lower() == 'x':
-            if self.in_kernel:
-                sys.exit()
-            else:
-                exit()
-        if asvar:
-            return lines
+    # Export to a separate file to make this file cleaner
+    def _show(self, asvar=False):
+        return show_board.show(self, asvar)
 
 
     def _run_quiet(self):
         self.show = False
     
+    # Export to a separate file to make this filecleaner
     def _store_data(self):
-        if not self.store:
-            return None
+        if not self.store: return None
         
-        # how am I going to store the data?
-        # each card -- when stored as via OHE -- takes up 8 values (6-1 for name and 4-1 for suit)
-        # alternatively, can store card's power (1) and suit (3), bringing each card to 4 values
-        # write out each player's starting hand, then write out some global stuff, then finish with the order of the cards played and the order of who won each trick
-
-        data = []
-        # write each player's hand
-        # Total values after this: 4 x 20 = 80
-        for i in range(4):
-            pos = (i+self.dealer.id+1)%4 # start to the left of the dealer
-            data += [val for c in self.starting_hands[pos] for val in [c.power] + [issuit for issuit in suit_to_writeout[c.suit]]]
-        # write some global stuff:
-        # turn_card power & suit (1 + 3) trump suit (3), caller position (relative to dealer; 1), round called in (1), alone (1), 
-        #       who won each trick (relative to dealer; 5), number of points for team 0/2 and 1/3 (relative to dealer; 2)
-        # Total values after this: 80 + 17 = 97
-        data += [Card(self.turn_card.name, self.turn_card.suit, trump_suit=self.turn_card.suit).power] + [v for v in suit_to_writeout[self.turn_card.suit]] # make sure the power is affected by trump
-        data += [v for v in suit_to_writeout[self.trump_suit]]
-        data += [(self.caller.id-self.dealer.id-1)%4] # subtract one so that if caller-position here is 0, it's the dealer's left
-        data += [2-int(self.called_first_round)]
-        data += [int(self.going_alone)]
-        data += [(w.id-self.dealer.id-1)%4 for w in self.winners]
-        data += [self.points_this_round[(self.dealer.id+1)%2], self.points_this_round[self.dealer.id%2]]
-        # now just write out the order of all the cards played -- string (card + player id) is fine
-        # include the first word of the result as well ("EUCHRE", "Single", "Sweep", "Loner")
-        # Total values after all this: 97 + 21 = 118
-
-        # if dealer is 3, first trick is always 0 - 1 - 2 - 3
-        # unless player 2 is going alone
-        if self.going_alone and (self.caller.id + 1)%4 == self.dealer.id:
-            data += [str(self.cards_played[i]) + str((i+1)%4) for i in range(4)]
-        else:
-            data += [str(self.cards_played[i]) + str(i) for i in range(4)]
-        data += [str(self.cards_played[4*j+i]) + str((i+self.winners[j-1].id-self.dealer.id-1)%4) for j in range(1,5) for i in range(4)]
-        #data += [self.result.split()[0]]
-        data += ['Single' if 'single' in self.result.lower() else ('EUCHRE' if 'euchre' in self.result.lower() else ('Loner' if 'loner' in self.result.lower() else ('Sweep')))]
-        data += [(i+self.dealer.id+1)%4 for i in range(4)]
-        data += [self.caller.id] + [self.points_this_round[(self.caller.id)%2] - self.points_this_round[(self.caller.id+1)%2]]
-
-        if self.header == []:
-            header = []
-            # writes out alternating e.g. "p2c3" and ["isD", "isH", "isS"] then moves onto "p2c4", then eventually gets to "p3c1", etc
-            header += [val for player in range(4) for card in range(1,6) for val in ['p'+str(player)+'c'+str(card)] + ['p'+str(player)+'c'+str(card)+issuit for issuit in ['isD', 'isH', 'isS']]]
-            header += ['TC_power'] + ['TC_is' + s for s in ['D', 'H', 'S']]
-            header += ['trump_is' + c for c in ['D', 'H', 'S']]
-            header += ['caller', 'round', 'alone']
-            header += ['winner' + str(i) for i in range(1,6)]
-            header += ['points02', 'points13']
-            header += ['played' + str(i) for i in range(1,21)]
-            header += ['result']
-            header += ['p'+str(i)+'trueid' for i in range(4)]
-            header += ['caller_trueid', 'caller_points']
-            self.header = header
-
+        data, header = store_data.get_data(self)
         self.data.append(data)
         self.results.append(self.result)
     
-    def writeout(self, folder='stored_runs', keep_results=False, ROOT_DIR=os.getcwd()+'/'):
-        if not self.store:
-            return None
-        ROOT_DIR = ROOT_DIR + '/' if ROOT_DIR[-1] != '/' else ROOT_DIR
-        #folder = os.path.join(ROOT_DIR, folder)
-        if folder[:len(ROOT_DIR)] != ROOT_DIR:
-            folder = ROOT_DIR + folder
-
-        if folder[len(ROOT_DIR):] not in os.listdir(ROOT_DIR):
+    @staticmethod
+    def data_to_readable(gameline, header=[]):
+        return store_data.data_to_readable(gameline, header)
+    
+    def writeout(self, folder, keep_results=False):
+        if not self.store: return None
+        
+        # Make the folder if doesn't already exist
+        if not os.path.isdir(folder):
+            print('Making folder:', folder)
+            if folder[0] != '/': print('Relative to cwd:', os.getcwd())
             os.mkdir(folder)
-        if keep_results:
-            if 'results' not in os.listdir(folder):
-                os.mkdir(folder + '/results')
+            
+        # Make the results folder if doesn't already exist and is desired
+        if keep_results and 'results' not in os.listdir(folder): os.mkdir(folder + '/results')
         
         prename = str(len(self.data)) + '_hands_'
         datafiles = os.listdir(folder)
         
+        # Find the first index unused file
         i = 0
         while True:
             filename = folder + '/' + prename + str(i).zfill(3) + '.csv'
@@ -563,11 +389,13 @@ class Board:
                 break
             i += 1
 
+        # Write the data
         with open(filename, 'w') as f:
             f.write(','.join(self.header) + '\n')
             for hand in self.data:
                 f.write(','.join([str(val) for val in hand]) + '\n')
         
+        # If desired, write the results
         if keep_results:
             with open(results_file, 'w') as f:
                 f.write('\n'.join(self.results))

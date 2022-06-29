@@ -22,10 +22,6 @@ def make_BASIC_player(id):
         lead_alone_rules=get_leading_alone_rules_BASIC(),
         follow_rules=get_follow_rules_BASIC(),
         
-        # compare to optimal_strategy -- consider taking this out, since it might just dominate the results
-        #first_round_threshold=1.2*first_round_threshold,
-        #second_round_threshold=1.2*second_round_threshold,
-        #going_alone_threshold=going_alone_threshold
         first_round_threshold=opt.first_round_threshold,
         second_round_threshold=opt.second_round_threshold,
         going_alone_threshold=opt.going_alone_threshold
