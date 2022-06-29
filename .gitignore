@@ -1,6 +1,5 @@
 *.txt
 *.out
-*.sh
 *_hands_*.csv
 *missed*.csv
 *.ipynb_checkpoints*
@@ -9,5 +8,6 @@
 .DS_Store
 thresholds/
 aggressive/
-logs/
+*/logs/
 models/
+config.yaml
