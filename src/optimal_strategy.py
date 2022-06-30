@@ -70,6 +70,7 @@ def caller_awkward_spot(board, player):
 		return sorted(possibilities, key=lambda x: x.power, reverse=True)[0]
 	return None
 
+# TODO fix this for the edge case if other jack was turned down, partner called it, and you have ace
 def partners_jack(board, player):
 	if board.caller.id == board._partner(player.id):
 		for c in player.hand:
@@ -101,6 +102,8 @@ def offsuit_king(board, player):
 				return c
 	return None
 
+# If you've taken 2 tricks so far and your partner called it,
+#   play your lowest so they can play their trump and you keep your trump
 def carry_the_team(board, player):
 	if board.caller.id == board._partner(player.id):
 		if board.ntricks[player.id] == 2:
@@ -110,8 +113,10 @@ def carry_the_team(board, player):
 	return None
 
 def mostly_trump(board, player):
+	#if sum([c.trump for c in player.hand]) / len(player.hand) >= 0.75:
+	#	return max(player.hand, key=lambda x: x.power)
 	if sum([c.trump for c in player.hand]) / len(player.hand) >= 0.75:
-		return max(player.hand, key=lambda x: x.power)
+		return min([c for c in player.hand if c.trump], key=lambda x: x.power)
 	return None
 
 def best_off_card(board, player):
@@ -220,7 +225,7 @@ def follow(board, player):
 			if board.caller.id == board._partner(player.id):    return(highest)
 			elif board.caller.id == player.id:                  return(highest)
 			else:                                               return(lowest_winning)
-		elif highest.suit == led_card.suit:				        return(highest)
+		elif highest.suit==led_card.suit and not highest.left:	return(highest)
 		else:								                    return(lowest_winning)
 	
 	# If you can't win the trick, play your lowest legal card

@@ -74,8 +74,10 @@ def follow_BASIC(board, player):
     
     else:
         # If your teammate **does** have it:
-        # let them take it
-        return lowest
+        # follow suit with your highest
+        # or else throw off
+        if followsuit: return highest
+        else: return lowest
     
 ###################
 # Intermediate Player -- healthy amount of strategy
